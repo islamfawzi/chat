@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Chat</title>
+	<link rel="stylesheet" type="text/css" href="css/main.css">
+</head>
+<body>
+ 
+ <div class="chat">
+ 	 
+ 	<input type="text" class="chat-name" placeholder="Enter your name" />
+ 	<div class="chat-messages"></div>
+ 	<textarea class="chat-textarea" placeholder="Type your message"></textarea>
+    <div class="chat-status">Status: <span>Idle</span></div>
+
+ </div>
+
+ <div class="chat-video">
+   <video id="video" height="300" width="400" autoplay=""></video>
+   <canvas id="canvas"></canvas>
+ </div>
+
+ <script type="text/javascript" src="http://10.0.0.164:8080/socket.io/socket.io.js">
+ </script>
+
+ <script type="text/javascript">
+ 	
+ 	(function(){
+      
+       var getNode = function(s){
+       	  return document.querySelector(s);
+       },
+
+       textarea = getNode('.chat-textarea'),
+       chatName = getNode('.chat-name'),
+       messages = getNode('.chat-messages'),
+       status   = getNode('.chat-status span'),
+       video    = getNode('#video'),
+       canvas   = getNode('#canvas'),
+       context  = canvas.getContext('2d'),
+       statusDefault = status.textContent,
+
+       setStatus = function(s){
+         status.textContent = s;	
+
+         if(s !== statusDefault){   // if new status != idle 
+             var delay = setTimeout(function(){
+             	setStatus(statusDefault);   // set status to idle again after 3 seconds
+             	clearInterval(delay);
+             }, 3000);
+         }
+       },
+       loadCam = function(stream){
+          console.log('Camera Connected [ok]');
+          video.src = vendorUrl.createObjectURL = stream;
+          video.play();
+       },
+       loadcamFail = function(){
+         console.log('Loading Camera Failed');
+       },
+       viewVideo = function(video, context){
+         context.drawImage(video, 0, 0, context.width, context.height);
+       };
+       
+       canvas.width = 400; 
+       canvas.height = 300;  
+
+       context.width = canvas.width; 
+       context.height = canvas.height;
+
+        // get user camera
+       navigator.getMedia = navigator.getUserMedia ||
+                       navigator.webkitGetUserMedia ||
+                       navigator.mozGetUserMedia ||
+                       navigator.msGetUserMedia; 
+
+       navigator.getMedia({ video: true }, loadCam,loadcamFail);
+       viewVideo(video, context); 
+       
+       try{
+         var socket = io.connect('http://10.0.0.164:8080');
+       }
+       catch(err){}
+
+       if(socket !== undefined){
+       	 console.log('ok!');
+         
+         socket.on('status', function(data){
+
+         	setStatus((typeof data === 'object')? data.message : data);
+
+         	if(data.clear === true){
+         		textarea.value = '';
+         	}
+         });
+         
+         socket.on('output',function(data){
+           if(data.length){
+           	for(var x = 0; x < data.length; x++){
+           		var message = document.createElement('div');
+           		message.setAttribute('class', 'chat-message');
+           		message.textContent = data[x].name + ": " + data[x].message;
+
+                messages.appendChild(message);
+                messages.insertBefore(message, messages.firstChild);
+
+           	}
+           }
+         });
+       	 textarea.addEventListener('keydown', function(event){
+       	 	var self = this,
+       	 	    name = chatName.value;
+
+       	 	// console.log(event.which);  // which key pressed
+       	 	// console.log(event.shiftKey);
+       	 	// console.log(event); 
+       	 	if(event.which === 13 && event.shiftKey === false){   //enter without shiftkey
+       			console.log('send');
+       			socket.emit('input', {
+       				name: name,
+       				message: self.value
+       			});
+
+       			event.preventDefault();
+       	 	}
+       	 });
+       }
+
+ 	})();
+ </script>
+</body>
+</html>
