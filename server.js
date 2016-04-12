@@ -1,6 +1,6 @@
 var express = require('express'),
     mongo = require('mongodb').MongoClient,
-    client = require('socket.io').listen(8080).sockets,
+    client = require('socket.io').listen(8081).sockets,
     app = express();
     
 mongo.connect('mongodb://127.0.0.1/chat', function(err, db){

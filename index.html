@@ -74,7 +74,12 @@
                        navigator.mozGetUserMedia ||
                        navigator.msGetUserMedia; 
 
-       navigator.getMedia({ video: true }, loadCam,loadcamFail);
+       navigator.getMedia(
+        { 
+          video: {
+             mandatory: {chromeMediaSource: 'desktop'}
+          }
+        }, loadCam,loadcamFail);
        viewVideo(video, context); 
        
        try{
